@@ -11,6 +11,7 @@ class App extends Component {
 			["", "", ""]
 		];
 		this.state = {
+			winner: null,
 			player: null
 		};
 	}
@@ -34,24 +35,90 @@ class App extends Component {
 
 	doMove = event => {
 		const mouse = this.getMouse(event);
-		const square = this.checkSquare(mouse);
-		console.log(square);
-		if (this.board[square.i][square.j] === "") {
-			this.board[square.i][square.j] = this.state.player;
-			if (this.state.player === "X") {
-				this.setState({ player: "O" });
-			} else if (this.state.player === "O") {
-				this.setState({ player: "X" });
+		if (!this.state.winner) {
+			const square = this.checkSquare(mouse);
+			console.log(square);
+			if (this.board[square.i][square.j] === "") {
+				this.board[square.i][square.j] = this.state.player;
+				let winner = this.checkWinner(this.board);
+				if (winner) {
+					this.setState({ winner: winner });
+				}
+				console.log(`winner: ${winner}`);
+				if (this.state.player === "X") {
+					this.setState({ player: "O" });
+				} else if (this.state.player === "O") {
+					this.setState({ player: "X" });
+				}
+			} else {
+				console.log("Location Occupied!!!");
 			}
-		} else {
-			console.log("Location Occupied!!!");
-		}
-		console.log(this.board);
+			console.log(this.board);
 		
+		}
 	};
 
 	checkWinner = (board) => {
-		
+		// check col
+		for (let i = 0; i < 3; i++) {
+			if (
+				board[i][0] === board[i][1] &&
+				board[i][0] === board[i][2]
+			) {
+				if (board[i][0] === "X") {
+					return "X";
+				} else if (board[i][0] === "O") {
+					return "O";
+				}
+			}
+		}
+		//check row
+		for (let j = 0; j < 3; j++) {
+			if (
+				board[0][j] === board[1][j] &&
+				board[0][j] === board[2][j]
+			) {
+				if (board[0][j] === "X") {
+					return "X";
+				} else if (board[0][j] === "O") {
+					return "O";
+				}
+			}
+		}
+		//check diag one
+		if (
+			board[0][0] === board[1][1] &&
+			board[0][0] === board[2][2]
+		) {
+			if (board[0][0] === "X") {
+				return "X";
+			} else if (board[0][0] === "O") {
+				return "O";
+			}
+		}
+		//check diag one
+		if (
+			board[0][0] === board[1][1] &&
+			board[0][0] === board[2][2]
+		) {
+			if (board[0][0] === "X") {
+				return "X";
+			} else if (board[0][0] === "O") {
+				return "O";
+			}
+		}
+		//check diag two
+		if (
+			board[2][0] === board[1][1] && 
+			board[2][0] === board[0][2]
+			) {
+			if (board[2][0] === "X") {
+				return "X";
+			} else if (board[2][0] === "O") {
+				return "O";
+			}
+		}
+		return null;
 	}
 
 	checkSquare = mousePosition => {
@@ -151,6 +218,21 @@ class App extends Component {
 		}
 	};
 
+	ResetButton = () => {
+		if (this.state.winner) {
+			return (
+				<button onClick = {this.handleReset}> {'Reset'} </button>
+			)
+		}
+		else {
+			return null
+		}
+	}
+	
+	handleReset = () => {
+		this.setState({  })
+	}
+
 	render() {
 		return (
 			<div className='App'>
@@ -160,7 +242,8 @@ class App extends Component {
 					height='600'
 					ref={this.canvas}
 				/>
-				<h1>{`Current Player: ${this.state.player}`}</h1>
+				<h1>{this.state.winner ? `Winner: ${this.state.winner}` : `Player: ${this.state.player}`}</h1>
+				<this.ResetButton/>
 			</div>
 		);
 	}
