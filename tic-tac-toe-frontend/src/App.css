@@ -2,10 +2,110 @@
   text-align: center;
   background-color: #282c34;
   min-height: 100vh;
+  min-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+}
+
+.settings-container {
+  width: 100%;
+  height: 50px;
+  display: block;
+  justify-content: left;
+  align-items: left;
+  text-align: left;
+}
+
+.setting-title {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  font-size: larger;
+  margin: 10px;
+}
+
+.slider {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  appearance: none;
+  background: #1b1c20;
+  opacity: 0.5;
+  transition: .2s;
+  width: 100px;
+  height: 25px;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  width: 15px;
+  height: 25px;
+  appearance: none;
+  background: darkslategrey;
+  cursor: pointer;
+}
+
+.settings-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  position: absolute;
+  right: 5%;
+  border: none;
+  border-radius: 5px;
+  background-color: darkslategrey;
+  width: 80px;
+  height: 5%;
+  color: white;
+  font-size: medium;
+}
+
+.settings-panel {
+  display: block;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 90%;
+  
+}
+
+.reset-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  border: none;
+  border-radius: 5px;
+  background-color: darkslategrey;
+  width: 80px;
+  height: 40px;
+  color: white;
+  font-size: medium;
+  margin: 10px;
+}
+
+.navbar {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  font-size: larger;
+  width: 100%;
+  height: 50px;
+  margin-top: 0px;  
+  background: #373c46;
 }

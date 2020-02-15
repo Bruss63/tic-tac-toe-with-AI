@@ -11,14 +11,40 @@ class App extends Component {
 			["", "", ""]
 		];
 		this.state = {
+			computeCount: 0,
+			settingsMenu: false,
+			difficulty: 2,
+			AI: false,
 			winner: null,
-			player: null
+			player: this.flipCoin(),
+			playerMode: 0
 		};
+		this.scores = {
+			X: 1,
+			O: -1,
+			Tie: 0
+		};
+		this.drawLoop = setInterval(this.updateAll, 20);
 	}
 
-	componentDidMount = () => {
-		this.setState({ player: this.flipCoin() });
-		this.drawLoop = setInterval(this.drawAll, 20);
+	componentDidMount() {
+		if (this.state.player === "X" && this.state.AI) {
+			console.log("AI first");
+			this.AIMove();
+		}
+	}
+
+	updateAll = () => {
+		if (!this.state.winner && this.state.AI && this.state.player === "X") {
+			this.AIMove();
+		}
+		this.drawAll();
+		this.setState({
+			canvasSize: Math.min(
+				document.documentElement.clientHeight * 0.9,
+				document.documentElement.clientWidth * 0.9
+			)
+		});
 	};
 
 	flipCoin() {
@@ -36,35 +62,149 @@ class App extends Component {
 	doMove = event => {
 		const mouse = this.getMouse(event);
 		if (!this.state.winner) {
-			const square = this.checkSquare(mouse);
-			console.log(square);
-			if (this.board[square.i][square.j] === "") {
-				this.board[square.i][square.j] = this.state.player;
-				let winner = this.checkWinner(this.board);
-				if (winner) {
-					this.setState({ winner: winner });
-				}
-				console.log(`winner: ${winner}`);
-				if (this.state.player === "X") {
-					this.setState({ player: "O" });
-				} else if (this.state.player === "O") {
-					this.setState({ player: "X" });
-				}
-			} else {
-				console.log("Location Occupied!!!");
+			if (this.state.player === "O") {
+				this.playerMove(mouse);
 			}
-			console.log(this.board);
-		
+			if (!this.state.AI && this.state.player === "X") {
+				this.playerMove(mouse);
+			}
+		}
+		else (
+			this.handleReset()
+		)
+	};
+
+	playerMove = mouse => {
+		const square = this.checkSquare(mouse);
+		console.log(square);
+		if (this.board[square.i][square.j] === "") {
+			this.board[square.i][square.j] = this.state.player;
+			let winner = this.checkWinner(this.board);
+			if (winner) {
+				this.setState({ winner: winner });
+			}
+			console.log(`winner: ${winner}`);
+
+			if (this.state.player === "X") {
+				this.setState({ player: "O" });
+			} else if (this.state.player === "O") {
+				this.setState({ player: "X" });
+			}
+		} else {
+			console.log("Location Occupied!!!");
+		}
+		console.log(this.board);
+	};
+
+	AIMove = () => {
+		console.clear();
+		this.setState({ computeCount: 0 })
+		let bestScore = -Infinity;
+		let move = null;
+		let empty = true;
+		for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j++) {
+				if (this.board[i][j] !== "") {
+					empty = false;
+				}
+			}
+		}
+		if (empty) {
+			move = { i: 0, j: 0 };
+		}
+		if (!move) {
+			for (let i = 0; i < 3; i++) {
+				for (let j = 0; j < 3; j++) {
+					if (this.board[i][j] === "") {
+						this.board[i][j] = "X";
+						this.setState({ 
+							computeCount: this.state.computeCount + 1
+						})
+						let score = this.minimax(this.board, 0, false, -Infinity, Infinity);
+						this.board[i][j] = "";
+						if (score > bestScore) {
+							bestScore = score;
+							move = { i, j };
+						}
+					}
+				}
+			}
+		}
+
+		console.log(move + this.state.computeCount);
+		this.board[move.i][move.j] = "X";
+		let winner = this.checkWinner(this.board);
+		if (winner) {
+			this.setState({ winner: winner });
+		}
+		this.setState({ player: "O" });
+	};
+
+	minimax = (board, depth, maximisingPlayer, alpha , beta) => {
+		if (depth > this.state.difficulty) {
+			return 0;
+		}
+		let result = this.checkWinner(board);
+		if (result !== null) {
+			console.log(this.scores[result]);
+			return this.scores[result];
+		}
+		if (maximisingPlayer) {
+			let bestScore = -Infinity;
+			for (let i = 0; i < 3; i++) {
+				for (let j = 0; j < 3; j++) {
+					if (board[i][j] === "") {
+						board[i][j] = "X";
+						console.log(
+							`depth: ${depth}, i: ${i}, j: ${j} ${board}`
+						);
+						this.setState({
+							computeCount: this.state.computeCount + 1
+						});
+						let score = this.minimax(board, depth + 1, false, alpha, beta);
+						alpha = Math.max(alpha, score)
+						board[i][j] = "";
+						bestScore = Math.max(score, bestScore);
+						if ( alpha >= beta ) {
+							break
+						}						
+						
+					}
+				}
+			}
+			console.log(`Max: ${bestScore}`);
+			return bestScore;
+		} else {
+			let bestScore = Infinity;
+			for (let i = 0; i < 3; i++) {
+				for (let j = 0; j < 3; j++) {
+					if (board[i][j] === "") {
+						board[i][j] = "O";
+						console.log(
+							`depth: ${depth}, i: ${i}, j: ${j} ${board}`
+						);
+						this.setState({
+							computeCount: this.state.computeCount + 1
+						});
+						let score = this.minimax(board, depth + 1, true, alpha, beta);
+						beta = Math.min(beta, score)
+						board[i][j] = "";
+						bestScore = Math.min(score, bestScore);
+						if (alpha >= beta) {
+							break
+						}
+					}
+				}
+			}
+			console.log(`Min: ${bestScore}`);
+			return bestScore;
 		}
 	};
 
-	checkWinner = (board) => {
+	checkWinner = board => {
 		// check col
 		for (let i = 0; i < 3; i++) {
-			if (
-				board[i][0] === board[i][1] &&
-				board[i][0] === board[i][2]
-			) {
+			if (board[i][0] === board[i][1] && board[i][0] === board[i][2]) {
 				if (board[i][0] === "X") {
 					return "X";
 				} else if (board[i][0] === "O") {
@@ -74,10 +214,7 @@ class App extends Component {
 		}
 		//check row
 		for (let j = 0; j < 3; j++) {
-			if (
-				board[0][j] === board[1][j] &&
-				board[0][j] === board[2][j]
-			) {
+			if (board[0][j] === board[1][j] && board[0][j] === board[2][j]) {
 				if (board[0][j] === "X") {
 					return "X";
 				} else if (board[0][j] === "O") {
@@ -86,10 +223,7 @@ class App extends Component {
 			}
 		}
 		//check diag one
-		if (
-			board[0][0] === board[1][1] &&
-			board[0][0] === board[2][2]
-		) {
+		if (board[0][0] === board[1][1] && board[0][0] === board[2][2]) {
 			if (board[0][0] === "X") {
 				return "X";
 			} else if (board[0][0] === "O") {
@@ -97,10 +231,7 @@ class App extends Component {
 			}
 		}
 		//check diag one
-		if (
-			board[0][0] === board[1][1] &&
-			board[0][0] === board[2][2]
-		) {
+		if (board[0][0] === board[1][1] && board[0][0] === board[2][2]) {
 			if (board[0][0] === "X") {
 				return "X";
 			} else if (board[0][0] === "O") {
@@ -108,18 +239,29 @@ class App extends Component {
 			}
 		}
 		//check diag two
-		if (
-			board[2][0] === board[1][1] && 
-			board[2][0] === board[0][2]
-			) {
+		if (board[2][0] === board[1][1] && board[2][0] === board[0][2]) {
 			if (board[2][0] === "X") {
 				return "X";
 			} else if (board[2][0] === "O") {
 				return "O";
 			}
 		}
+		//check tie
+		let gameDone = true;
+		for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j++) {
+				if (board[i][j] === "") {
+					gameDone = false;
+				}
+			}
+		}
+
+		if (gameDone) {
+			return "Tie";
+		}
+
 		return null;
-	}
+	};
 
 	checkSquare = mousePosition => {
 		const canvas = this.canvas.current;
@@ -158,7 +300,7 @@ class App extends Component {
 		if (this.canvas) {
 			const canvas = this.canvas.current;
 			const ctx = canvas.getContext("2d");
-			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			this.drawBoard(canvas, ctx);
 			this.drawPieces(canvas, ctx);
 		} else {
@@ -219,31 +361,148 @@ class App extends Component {
 	};
 
 	ResetButton = () => {
-		if (this.state.winner) {
-			return (
-				<button onClick = {this.handleReset}> {'Reset'} </button>
-			)
+		if (!this.state.settingsMenu) {
+			if (this.state.winner) {
+				return (
+					<button className="reset-button" onClick={this.handleReset}>
+						{"Reset"}
+					</button>
+				);
+			} else {
+				return null;
+			}
 		}
 		else {
-			return null
+			return (
+				<button className="reset-button" onClick={this.handleReset}>
+					{"Reset"}
+				</button>
+			);
 		}
-	}
-	
+		
+	};
+
 	handleReset = () => {
-		this.setState({  })
-	}
+		this.board = [
+			["", "", ""],
+			["", "", ""],
+			["", "", ""]
+		];
+		this.setState({ winner: null, player: this.flipCoin() });
+	};
+
+	DifficultySlider = () => {
+		if (this.state.settingsMenu) {
+			return (
+				<div className="settings-container">
+					<h1 className="setting-title">{"Difficulty"}</h1>
+					<input
+						type="range"
+						className="slider"
+						step="3"
+						min="2"
+						max="5"
+						onChange={this.handleDifficulty}
+						value={this.state.difficulty}
+					></input>
+				</div>
+			);
+		} else {
+			return null;
+		}
+	};
+
+	PlayerSlider = () => {
+		if (this.state.settingsMenu) {
+			return (
+				<div className="settings-container">
+					<h1 className="setting-title">{"PlayerMode"}</h1>
+					<input
+						type="range"
+						className="slider"
+						min="0"
+						max="1"
+						onChange={this.handlePlayer}
+						value={this.state.playerMode}
+					></input>
+					<h1 className="setting-title">{this.state.AI ? "AI" : "Two Player"}</h1>
+				</div>
+			);
+		} else {
+			return null;
+		}
+	};
+
+	handlePlayer = event => {
+		this.setState({ playerMode: event.target.value });
+		if (event.target.value === "1") {
+			this.setState({ AI: true })
+			console.log(this.state.AI, this.state.playerMode);
+		} else if (event.target.value === "0") {
+			this.setState({ AI: false });
+		}
+		
+	};
+
+	handleDifficulty = event => {
+		this.setState({ difficulty: event.target.value });
+	};
+
+	Navbar = () => {
+		return (
+			<h1 className="navbar">
+				{this.state.winner
+					? `Winner: ${this.state.winner}`
+					: `Player: ${this.state.player}`}
+				<button
+					className="settings-button"
+					onClick={this.handleSettings}
+				>
+					{" "}
+					{"Settings"}{" "}
+				</button>
+			</h1>
+		);
+	};
+
+	handleSettings = () => {
+		if (this.drawLoop) {
+			clearInterval(this.drawLoop);
+			this.drawLoop = null;
+		} else {
+			this.drawLoop = setInterval(this.updateAll, 20);
+		}
+		let settingsMenu = this.state.settingsMenu;
+		this.setState({ settingsMenu: !settingsMenu });
+		console.log(this.state.settingsMenu);
+	};
+
+	MainPane = () => {
+		if (this.state.settingsMenu) {
+			return (
+				<div className="settings-panel">
+					<this.DifficultySlider />
+					<this.PlayerSlider />
+				</div>
+			);
+		} else {
+			return (
+				<canvas
+					onClick={this.doMove}
+					width={this.state.canvasSize}
+					height={this.state.canvasSize}
+					ref={this.canvas}
+				/>
+			);
+		}
+	};
 
 	render() {
 		return (
-			<div className='App'>
-				<canvas
-					onClick={this.doMove}
-					width='600'
-					height='600'
-					ref={this.canvas}
-				/>
-				<h1>{this.state.winner ? `Winner: ${this.state.winner}` : `Player: ${this.state.player}`}</h1>
-				<this.ResetButton/>
+			<div className="App">
+				<this.Navbar />
+				<this.MainPane />
+				<this.ResetButton />
 			</div>
 		);
 	}
