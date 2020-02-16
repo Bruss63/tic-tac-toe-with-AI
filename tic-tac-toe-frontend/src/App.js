@@ -12,6 +12,9 @@ class App extends Component {
 		];
 		this.state = {
 			computeCount: 0,
+			startTime: 0,
+			endTime: 0,
+			totalTime: 0,
 			settingsMenu: false,
 			difficulty: 2,
 			AI: false,
@@ -41,8 +44,8 @@ class App extends Component {
 		this.drawAll();
 		this.setState({
 			canvasSize: Math.min(
-				document.documentElement.clientHeight * 0.9,
-				document.documentElement.clientWidth * 0.9
+				document.documentElement.clientHeight * 0.8,
+				document.documentElement.clientWidth * 0.8
 			)
 		});
 	};
@@ -83,7 +86,6 @@ class App extends Component {
 			if (winner) {
 				this.setState({ winner: winner });
 			}
-			console.log(`winner: ${winner}`);
 
 			if (this.state.player === "X") {
 				this.setState({ player: "O" });
@@ -93,12 +95,11 @@ class App extends Component {
 		} else {
 			console.log("Location Occupied!!!");
 		}
-		console.log(this.board);
 	};
 
 	AIMove = () => {
 		console.clear();
-		this.setState({ computeCount: 0 })
+		this.setState({ computeCount: 0, startTime: Date.now() })
 		let bestScore = -Infinity;
 		let move = null;
 		let empty = true;
@@ -117,11 +118,13 @@ class App extends Component {
 				for (let j = 0; j < 3; j++) {
 					if (this.board[i][j] === "") {
 						this.board[i][j] = "X";
+						console.log(
+							`depth: root, i: ${i}, j: ${j} ${this.board}`
+						);
 						this.setState({ 
 							computeCount: this.state.computeCount + 1
 						})
-						let score = this.minimax(this.board, 0, false, -Infinity, Infinity);
-						this.board[i][j] = "";
+						let score = this.minimax(this.board, 0, false, -Infinity, Infinity);						this.board[i][j] = "";
 						if (score > bestScore) {
 							bestScore = score;
 							move = { i, j };
@@ -131,13 +134,17 @@ class App extends Component {
 			}
 		}
 
-		console.log(move + this.state.computeCount);
+		
 		this.board[move.i][move.j] = "X";
 		let winner = this.checkWinner(this.board);
 		if (winner) {
 			this.setState({ winner: winner });
 		}
-		this.setState({ player: "O" });
+		this.setState({ player: "O", endTime: Date.now() });
+		this.setState({ totalTime: this.state.endTime - this.state.startTime });		
+		console.log(
+			`Move: {${move.i}, ${move.j}}, Compute Count: ${this.state.computeCount}, Total Time: ${this.state.totalTime}ms`
+		);
 	};
 
 	minimax = (board, depth, maximisingPlayer, alpha , beta) => {
@@ -146,7 +153,6 @@ class App extends Component {
 		}
 		let result = this.checkWinner(board);
 		if (result !== null) {
-			console.log(this.scores[result]);
 			return this.scores[result];
 		}
 		if (maximisingPlayer) {
@@ -161,18 +167,15 @@ class App extends Component {
 						this.setState({
 							computeCount: this.state.computeCount + 1
 						});
-						let score = this.minimax(board, depth + 1, false, alpha, beta);
-						alpha = Math.max(alpha, score)
+						let score = this.minimax(board, depth + 1, false, alpha, beta);						alpha = Math.max(alpha, score)
 						board[i][j] = "";
-						bestScore = Math.max(score, bestScore);
-						if ( alpha >= beta ) {
+						bestScore = Math.max(score, bestScore);						if ( alpha >= beta ) {
 							break
 						}						
 						
 					}
 				}
 			}
-			console.log(`Max: ${bestScore}`);
 			return bestScore;
 		} else {
 			let bestScore = Infinity;
@@ -186,8 +189,7 @@ class App extends Component {
 						this.setState({
 							computeCount: this.state.computeCount + 1
 						});
-						let score = this.minimax(board, depth + 1, true, alpha, beta);
-						beta = Math.min(beta, score)
+						let score = this.minimax(board, depth + 1, true, alpha, beta);						beta = Math.min(beta, score)
 						board[i][j] = "";
 						bestScore = Math.min(score, bestScore);
 						if (alpha >= beta) {
@@ -196,7 +198,6 @@ class App extends Component {
 					}
 				}
 			}
-			console.log(`Min: ${bestScore}`);
 			return bestScore;
 		}
 	};
@@ -437,7 +438,6 @@ class App extends Component {
 		this.setState({ playerMode: event.target.value });
 		if (event.target.value === "1") {
 			this.setState({ AI: true })
-			console.log(this.state.AI, this.state.playerMode);
 		} else if (event.target.value === "0") {
 			this.setState({ AI: false });
 		}
@@ -474,7 +474,6 @@ class App extends Component {
 		}
 		let settingsMenu = this.state.settingsMenu;
 		this.setState({ settingsMenu: !settingsMenu });
-		console.log(this.state.settingsMenu);
 	};
 
 	MainPane = () => {
